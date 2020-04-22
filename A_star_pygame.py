@@ -1,4 +1,6 @@
 import pygame
+from random import randint
+import math
 class Node:
     def __init__(self,parent=None,position=None):
         self.parent = parent
@@ -10,36 +12,48 @@ class Node:
         return self.position == other.position
 
 def draw_path(window,layout,field):
-    window.fill((255,255,255))
+    draw_grid(window,500,field)
     for i in layout:
         pygame.draw.rect(window,(255,0,255),(i[0]*field,i[1]*field,field,field))
     pygame.display.update()
 
+def draw_grid(window,screen,field):
+    for x in range(0,screen,field):
+        pygame.draw.line(window,(0,0,0),(x,0),(x,screen))
+        pygame.draw.line(window,(0,0,0),(0,x),(screen,x))
 
-def draw_closed_and_children(window,field,closedList,children):
-    for x in range(0,500,5):
-        pygame.draw.line(window,(0,0,0),(x,0),(x,500))
-        pygame.draw.line(window,(0,0,0),(0,x),(500,x))
-    for x in closedList:
-        pygame.draw.rect(window,(128,128,128),(x.position[0]*5,x.position[1]*5,5,5))
+def draw_closed_and_children(window,field,openList,children,grid):
+    draw_grid(window,500,field)
+    draw_blocker(window,grid,field)
+    for x in openList:
+        pygame.draw.rect(window,(128,128,128),(x.position[0]*field,x.position[1]*field,field,field))
     for x in children:
-        pygame.draw.rect(window,(0,255,255),(x.position[0]*5,x.position[1]*5,5,5))
+        pygame.draw.rect(window,(0,255,255),(x.position[0]*field,x.position[1]*field,field,field))
     pygame.display.update()
-    
-def algorithm(grid,start,end,window,clock,field):
-    startNode = Node(None,start)
+
+def draw_blocker(window,grid,field):
+    for x,g in enumerate(grid):
+        for k,j in enumerate(g):
+            if j ==1:
+                pygame.draw.rect(window,(0,0,255),(x*field,k*field,field,field))
+        
+        
+def algorithm(grid,start,end,window,clock,field,startNode,endNode):
+    startNode =(int(startNode[0]/field),int(startNode[1]/field))
+    startNode =Node(None,startNode)
+    endNode =(int(endNode[0]/field),int(endNode[1]/field))
+    endNode =Node(None,endNode)
     startNode.gCost = startNode.hCost = startNode.fCost = 0
-    endNode = Node(None,end)
     endNode.gCost = endNode.hCost = endNode.fCost = 0
     
     openList =[]
-    closedList = []
+    closedList = [] 
     
     openList.append(startNode)
-    window.fill((255,255,255))
+    
     
     while len(openList)>0:
-        clock.tick(10)
+        clock.tick(5)
 
         currentNode = openList[0]
         currentIndex = 0
@@ -85,27 +99,53 @@ def algorithm(grid,start,end,window,clock,field):
                 if child == openNode and child.gCost > openNode.gCost:
                     continue
             openList.append(child)
-        draw_closed_and_children(window,field,closedList,children)
+        draw_closed_and_children(window,field,openList,children,grid)
 
     
-
 def main():
     screen = 500
-    cols = 100
-    field = screen/cols
+    cols = 10
+    field = int(screen/cols)
     clock = pygame.time.Clock()
     window = pygame.display.set_mode((screen,screen))
     pygame.display.set_caption("Pathfinder")
-
-    grid= [[0 for i in range(cols)] for j in range(cols)]   
+    grid= [[0 for i in range(cols)] for j in range(cols)]
+    for i in range(0,5):
+        grid[2][i] = 1
+    print(grid)
     
+    window.fill((255,255,255))
     startNode = (0,0)
-    endNode =(99,44)
+    endNode = (250,250)
     
-    layout = algorithm(grid,startNode,endNode,window,clock,field)
+    gogo = True
+    
+    while gogo:
+        clock.tick(10)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                    pygame.quit()
+                    
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button ==1:
+                startNode = pygame.mouse.get_pos()
+                startNode = (field*math.ceil(startNode[0]//field),field*math.ceil(startNode[1]//field))
+                
+            if event.type  == pygame.MOUSEBUTTONDOWN and event.button ==3:
+                endNode = pygame.mouse.get_pos()
+                endNode = (field*math.ceil(endNode[0]//field),field*math.ceil(endNode[1]//field))
+                
+            window.fill((255,255,255))
+            draw_grid(window,screen,field)
+            pygame.draw.rect(window,(0,255,255),(startNode[0],startNode[1],field,field))
+            pygame.draw.rect(window,(0,0,0),(endNode[0],endNode[1],field,field))
+            pygame.display.update()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    gogo = False
+    layout = algorithm(grid,startNode,endNode,window,clock,field,startNode,endNode)
     draw_path(window, layout, field)
+    
 if __name__ == '__main__':
-
     main()
                
             
