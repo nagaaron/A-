@@ -10,10 +10,23 @@ class Node:
         return self.position == other.position
 
 def draw_path(window,layout,field):
+    window.fill((255,255,255))
     for i in layout:
         pygame.draw.rect(window,(255,0,255),(i[0]*field,i[1]*field,field,field))
     pygame.display.update()
-def algorithm(grid,start,end,window,clock):
+
+
+def draw_closed_and_children(window,field,closedList,children):
+    for x in range(0,500,5):
+        pygame.draw.line(window,(0,0,0),(x,0),(x,500))
+        pygame.draw.line(window,(0,0,0),(0,x),(500,x))
+    for x in closedList:
+        pygame.draw.rect(window,(128,128,128),(x.position[0]*5,x.position[1]*5,5,5))
+    for x in children:
+        pygame.draw.rect(window,(0,255,255),(x.position[0]*5,x.position[1]*5,5,5))
+    pygame.display.update()
+    
+def algorithm(grid,start,end,window,clock,field):
     startNode = Node(None,start)
     startNode.gCost = startNode.hCost = startNode.fCost = 0
     endNode = Node(None,end)
@@ -26,7 +39,7 @@ def algorithm(grid,start,end,window,clock):
     window.fill((255,255,255))
     
     while len(openList)>0:
-        clock.tick(1)
+        clock.tick(10)
 
         currentNode = openList[0]
         currentIndex = 0
@@ -72,44 +85,25 @@ def algorithm(grid,start,end,window,clock):
                 if child == openNode and child.gCost > openNode.gCost:
                     continue
             openList.append(child)
-        for x in range(0,500,50):
-            pygame.draw.line(window,(0,0,0),(x,0),(x,500))
-            pygame.draw.line(window,(0,0,0),(0,x),(500,x))
-        for x in closedList:
-            pygame.draw.rect(window,(128,128,128),(x.position[0]*50,x.position[1]*50,50,50))
-        pygame.display.update()
-        for x in openList:
-            pygame.draw.rect(window,(0,255,255),(x.position[0]*50,x.position[1]*50,50,50))
-        pygame.display.update()
-    draw_path(window, layout, field)
-    for x in range(0,500,50):
-        pygame.draw.line(window,(0,0,0),(x,0),(x,500))
-        pygame.draw.line(window,(0,0,0),(0,x),(500,x))
-    for x in closedList:
-        pygame.draw.rect(window,(128,128,128),(x.position[0]*50,x.position[1]*50,50,50))
-    pygame.display.update()
-    for x in openList:
-        pygame.draw.rect(window,(0,255,255),(x.position[0]*50,x.position[1]*50,50,50))
-    pygame.display.update()
+        draw_closed_and_children(window,field,closedList,children)
+
+    
+
 def main():
     screen = 500
-    cols = 10
+    cols = 100
     field = screen/cols
     clock = pygame.time.Clock()
     window = pygame.display.set_mode((screen,screen))
     pygame.display.set_caption("Pathfinder")
 
-    
     grid= [[0 for i in range(cols)] for j in range(cols)]   
     
     startNode = (0,0)
-    endNode =(8,9)
+    endNode =(99,44)
     
-    layout = algorithm(grid,startNode,endNode,window,clock)
+    layout = algorithm(grid,startNode,endNode,window,clock,field)
     draw_path(window, layout, field)
-
-    
-   
 if __name__ == '__main__':
 
     main()
