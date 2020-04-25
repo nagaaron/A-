@@ -12,6 +12,7 @@ class Node:
         return self.position == other.position
 
 def draw_path(window,layout,field):
+    window.fill((255,255,255))
     draw_grid(window,500,field)
     for i in layout:
         pygame.draw.rect(window,(255,0,255),(i[0]*field,i[1]*field,field,field))
@@ -22,16 +23,23 @@ def draw_grid(window,screen,field):
         pygame.draw.line(window,(0,0,0),(x,0),(x,screen))
         pygame.draw.line(window,(0,0,0),(0,x),(screen,x))
 
-def draw_closed_and_children(window,field,openList,children,grid):
+def draw_closed_and_children(window,field,openList,children,closedList,grid):
+    window.fill((255,255,255))
     draw_grid(window,500,field)
     draw_blocker(window,grid,field)
     
     for x in openList:
         pygame.draw.rect(window,(0,255,0),(x.position[0]*field,x.position[1]*field,field,field))
         
-    for x in children:
-        pygame.draw.rect(window,(255,255,255),(x.position[0]*field,x.position[1]*field,field,field))
-        
+# =============================================================================
+#     for x in children:
+#         pygame.draw.rect(window,(255,0,0),(x.position[0]*field,x.position[1]*field,field,field))
+# =============================================================================
+    
+    for x in closedList:
+        pygame.draw.rect(window,(128,128,128),(x.position[0]*field,x.position[1]*field,field,field))
+    
+
     pygame.display.update()
 
 def draw_blocker(window,grid,field):
@@ -56,16 +64,35 @@ def algorithm(grid,start,end,window,clock,field,startNode,endNode):
     
     
     while len(openList)>0:
-        clock.tick(5)
+        print('______')
+        for i in closedList:
+            print(i.position)
+        clock.tick(10)
 
         currentNode = openList[0]
         currentIndex = 0
         for index,item in enumerate(openList):
-            if item.fCost <= currentNode.fCost:
+            if item.fCost < currentNode.fCost:
                 currentNode = item
                 currentIndex = index
+            elif item.fCost == currentNode.fCost:
+                if item.hCost < currentNode.hCost:
+                    currentNode = item
+                    currentIndex = index
         openList.pop(currentIndex)
-        closedList.append(currentNode)
+        
+        inclosed = False
+        for i in closedList:
+            if currentNode.position == i.position:
+                inclosed = True
+                i.gCost= currentNode.gCost
+                i.hCost= currentNode.hCost
+                i.fCost= currentNode.fCost
+                i.parent = currentNode.parent
+                break
+        if inclosed ==False:
+            closedList.append(currentNode)
+        
         if currentNode == endNode:
             path = []
             current = currentNode
@@ -81,36 +108,36 @@ def algorithm(grid,start,end,window,clock,field,startNode,endNode):
         children = []
         for new_position in [( 0, -1),( 0, 1 ),( -1 ,0),( 1 ,0),( -1 ,-1 ),( -1 , 1 ),( 1 , -1 ),( 1 , 1 )]:
             node_position = (currentNode.position[0]+new_position[0],currentNode.position[1]+new_position[1])
-            
+             
             if node_position[0] > (len(grid)-1) or node_position[0] < 0 or node_position[1] > (len(grid[len(grid)-1])-1) or node_position[1]<0:
                 continue
             if grid[node_position[0]][node_position[1]]!=0:
                 continue
-            inopen = False
-            for i in openList:
-                if node_position == i.position:
-                    inopen = True
-                    break
-            if inopen: 
-                continue
-            
+
             new_node = Node(currentNode, node_position)
             
             children.append(new_node)
-        
+
+            
         for child in children:
+            inclosed = False
             for closed_child in closedList:
                 if child == closed_child:
-                    continue
+                    inclosed = True
+                    break
+
+                
             child.gCost = currentNode.gCost +1
             child.hCost =((child.position[0] - endNode.position[0])**2+(child.position[1]-endNode.position[1])**2)**0.5
             child.fCost = child.gCost + child.hCost
-            
+            if inclosed:
+                continue
             for openNode in openList:
                 if child == openNode and child.gCost > openNode.gCost:
                     continue
             openList.append(child)
-        draw_closed_and_children(window,field,openList,children,grid)
+
+        draw_closed_and_children(window,field,openList,children,closedList,grid)
 
     
 def main():
@@ -122,7 +149,6 @@ def main():
     pygame.display.set_caption("Pathfinder")
     grid= [[0 for i in range(cols)] for j in range(cols)]
     
-    print(grid)
     grids = True
     window.fill((255,255,255))
     startNode = (0,0)
@@ -131,7 +157,7 @@ def main():
     gogo = True
     
     while gogo:
-        clock.tick(10)
+        clock.tick(30)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                     pygame.quit()
